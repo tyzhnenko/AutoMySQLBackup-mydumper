@@ -1,8 +1,10 @@
 #!/bin/bash
 #
-# MySQL Backup Script
+# MySQL MyDumper Backup Script
 # VER. 2.5.1 - http://sourceforge.net/projects/automysqlbackup/
+# VER. 2.6.0 - https://github.com/tyzhnenko/AutoMySQLBackup-mydumper
 # Copyright (c) 2002-2003 wipe_out@lycos.co.uk
+# Copyright (c) 2013 Tyzhnenko Dmitry t.dmitry@gmail.com
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -99,6 +101,15 @@ else
 	#  For connections to localhost. Sometimes the Unix socket file must be specified.
 	SOCKET=
 	
+	# Use mydumper istead of mysqldump. Used only when SEPDIR=yes
+	MYDUMPER_USE='yes'
+
+	MYDUMPER_COMPRESS='yes'
+
+	MYDUMPER_NO_LOCKS='yes'
+
+	MYDUMPER_THREADS=4
+
 	# Command to run before backups (uncomment to use)
 	#PREBACKUP="/etc/mysql-backup-pre"
 	
@@ -262,6 +273,8 @@ fi
 # Change Log
 #=====================================================================
 #
+# VER 2.6.0 (2013-09-16)
+#     - Add mydumper support
 # VER 2.5.1-01 - (2010-07-06)
 #     - Fixed pathname bug item #3025849 (by Johannes Kolter)
 # VER 2.5.1 - (2010-07-04)
@@ -389,6 +402,7 @@ FIND="`${WHICH} find`"
 RM="`${WHICH} rm`"
 MYSQL="`${WHICH} mysql`"
 MYSQLDUMP="`${WHICH} mysqldump`"
+MYDUMPER="`${WHICH} mydumper`"
 GZIP="`${WHICH} gzip`"
 BZIP2="`${WHICH} bzip2`"
 CP="`${WHICH} cp`"
@@ -441,11 +455,12 @@ DNOW=`${DATEC} +%u`						# Day number of the week 1 to 7 where 1 represents Mond
 DOM=`${DATEC} +%d`							# Date of the Month e.g. 27
 M=`${DATEC} +%B`							# Month e.g January
 W=`${DATEC} +%V`							# Week Number e.g 37
-VER=2.5.1									# Version Number
+VER=2.6.0									# Version Number
 LOGFILE=${BACKUPDIR}/${DBHOST}-`${DATEC} +%N`.log		# Logfile Name
 LOGERR=${BACKUPDIR}/ERRORS_${DBHOST}-`${DATEC} +%N`.log		# Logfile Name
 BACKUPFILES=""
 OPT="--quote-names --opt"			# OPT string for use with mysqldump ( see man mysqldump )
+MYDUMPER_OPT=''
 
 # IO redirection for logging.
 touch ${LOGFILE}
@@ -468,6 +483,18 @@ if [ "${MAX_ALLOWED_PACKET}" ];
 	then
 		OPT="${OPT} --max_allowed_packet=${MAX_ALLOWED_PACKET}"
 	fi
+
+if [ "$MYDUMPER_COMPRESS" = 'yes' ]; then
+    MYDUMPER_OPT="$MYDUMPER_OPT --compress"
+fi
+
+if [ "$MYDUMPER_NO_LOCKS" = 'yes' ]; then
+    MYDUMPER_OPT="$MYDUMPER_OPT --no-locks"
+fi
+
+if [ "$MYDUMPER_THREADS" -gt '0' ]; then
+    MYDUMPER_OPT="$MYDUMPER_OPT --threads $MYDUMPER_THREADS"
+fi
 
 # Create required directories
 if [ ! -e "${BACKUPDIR}" ]		# Check Backup Directory exists.
@@ -504,7 +531,11 @@ fi
 
 # Database dump function
 dbdump () {
-${MYSQLDUMP} --user=${USERNAME} --password=${PASSWORD} --host=${DBHOST} ${OPT} ${1} > ${2}
+    if [ "$MYDUMPER_USE" = 'yes' ]; then
+        ${MYDUMPER} --user=${USERNAME} --password=${PASSWORD} --host=${DBHOST} ${MYDUMPER_OPT} --database ${1} --outputdir ${2}
+    else
+        ${MYSQLDUMP} --user=${USERNAME} --password=${PASSWORD} --host=${DBHOST} ${OPT} ${1} > ${2}
+    fi
 return $?
 }
 
@@ -601,13 +632,25 @@ ${ECHO} ======================================================================
 				mkdir -p "${BACKUPDIR}/monthly/${MDB}"
 			fi
 			${ECHO} Monthly Backup of ${MDB}...
-				dbdump "${MDB}" "${BACKUPDIR}/monthly/${MDB}/${MDB}_${DATE}.${M}.${MDB}.sql"
+                if [ "$MYDUMPER_USE" = 'yes' ]; then
+                    if [ ! -e "${BACKUPDIR}/monthly/${MDB}/${MDB}_${DATE}.${M}.${MDB}" ]       # Check Database backup directory exists.
+                    then
+                        mkdir -p "${BACKUPDIR}/monthly/${MDB}/${MDB}_${DATE}.${M}.${MDB}"
+                    fi
+				    dbdump "${MDB}" "${BACKUPDIR}/monthly/${MDB}/${MDB}_${DATE}.${M}.${MDB}"
+                else
+                    dbdump "${MDB}" "${BACKUPDIR}/monthly/${MDB}/${MDB}_${DATE}.${M}.${MDB}.sql"
+                fi
 				[ $? -eq 0 ] && {
 					${ECHO} "Rotating 5 month backups for ${MDB}"
 					${FIND} "${BACKUPDIR}/monthly/${MDB}" -mtime +150 -type f -exec ${RM} -v {} \; 
 				}
-				compression "${BACKUPDIR}/monthly/${MDB}/${MDB}_${DATE}.${M}.${MDB}.sql"
-				BACKUPFILES="${BACKUPFILES} ${BACKUPDIR}/monthly/${MDB}/${MDB}_${DATE}.${M}.${MDB}.sql${SUFFIX}"
+                if [ "$MYDUMPER_USE" = 'yes' ]; then
+				    BACKUPFILES="${BACKUPFILES} ${BACKUPDIR}/monthly/${MDB}/${MDB}_${DATE}.${M}.${MDB}"
+                else
+                    compression "${BACKUPDIR}/monthly/${MDB}/${MDB}_${DATE}.${M}.${MDB}.sql"
+                    BACKUPFILES="${BACKUPFILES} ${BACKUPDIR}/monthly/${MDB}/${MDB}_${DATE}.${M}.${MDB}.sql${SUFFIX}"
+                fi
 			${ECHO} ----------------------------------------------------------------------
 		done
 	fi
@@ -632,26 +675,50 @@ ${ECHO} ======================================================================
 	if [ ${DNOW} = ${DOWEEKLY} ]; then
 		${ECHO} Weekly Backup of Database \( ${DB} \)
 		${ECHO}
-			dbdump "${DB}" "${BACKUPDIR}/weekly/${DB}/${DB}_week.${W}.${DATE}.sql"
+            if [ "$MYDUMPER_USE" = 'yes' ]; then
+                if [ ! -e "${BACKUPDIR}/weekly/${DB}/${DB}_week.${W}.${DATE}" ]       # Check Database backup directory exists.
+                then
+                    mkdir -p "${BACKUPDIR}/weekly/${DB}/${DB}_week.${W}.${DATE}"
+                fi   
+			    dbdump "${DB}" "${BACKUPDIR}/weekly/${DB}/${DB}_week.${W}.${DATE}"
+            else
+                dbdump "${DB}" "${BACKUPDIR}/weekly/${DB}/${DB}_week.${W}.${DATE}.sql"
+            fi
 			[ $? -eq 0 ] && {
 				${ECHO} Rotating 5 weeks Backups...
 				${FIND} "${BACKUPDIR}/weekly/${DB}" -mtime +35 -type f -exec ${RM} -v {} \; 
 			}
-			compression "${BACKUPDIR}/weekly/${DB}/${DB}_week.${W}.${DATE}.sql"
-			BACKUPFILES="${BACKUPFILES} ${BACKUPDIR}/weekly/${DB}/${DB}_week.${W}.${DATE}.sql${SUFFIX}"
+            if [ "$MYDUMPER_USE" = 'yes' ]; then
+			    BACKUPFILES="${BACKUPFILES} ${BACKUPDIR}/weekly/${DB}/${DB}_week.${W}.${DATE}"
+            else
+                compression "${BACKUPDIR}/weekly/${DB}/${DB}_week.${W}.${DATE}.sql"
+                BACKUPFILES="${BACKUPFILES} ${BACKUPDIR}/weekly/${DB}/${DB}_week.${W}.${DATE}.sql${SUFFIX}"
+            fi
 		${ECHO} ----------------------------------------------------------------------
 	
 	# Daily Backup
 	else
 		${ECHO} Daily Backup of Database \( ${DB} \)
 		${ECHO}
-			dbdump "${DB}" "${BACKUPDIR}/daily/${DB}/${DB}_${DATE}.${DOW}.sql"
+            if [ "$MYDUMPER_USE" = 'yes' ]; then
+                if [ ! -e "${BACKUPDIR}/daily/${DB}/${DB}_${DATE}.${DOW}" ]       # Check Database backup directory exists.
+                then
+                    mkdir -p "${BACKUPDIR}/daily/${DB}/${DB}_${DATE}.${DOW}"
+                fi 
+			    dbdump "${DB}" "${BACKUPDIR}/daily/${DB}/${DB}_${DATE}.${DOW}"
+            else
+                dbdump "${DB}" "${BACKUPDIR}/daily/${DB}/${DB}_${DATE}.${DOW}.sql"
+            fi
 			[ $? -eq 0 ] && {
 				${ECHO} Rotating last weeks Backup...
 				${FIND} "${BACKUPDIR}/daily/${DB}" -mtime +6 -type f -exec ${RM} -v {} \; 
 			}
-			compression "${BACKUPDIR}/daily/${DB}/${DB}_${DATE}.${DOW}.sql"
-			BACKUPFILES="${BACKUPFILES} ${BACKUPDIR}/daily/${DB}/${DB}_${DATE}.${DOW}.sql${SUFFIX}"
+            if [ "$MYDUMPER_USE" = 'yes' ]; then
+			    BACKUPFILES="${BACKUPFILES} ${BACKUPDIR}/daily/${DB}/${DB}_${DATE}.${DOW}"
+            else
+                compression "${BACKUPDIR}/daily/${DB}/${DB}_${DATE}.${DOW}.sql"
+                BACKUPFILES="${BACKUPFILES} ${BACKUPDIR}/daily/${DB}/${DB}_${DATE}.${DOW}.sql${SUFFIX}"
+            fi
 		${ECHO} ----------------------------------------------------------------------
 	fi
 	done
