@@ -273,7 +273,7 @@ fi
 # Change Log
 #=====================================================================
 #
-# VER 2.6.0 (2013-09-16)
+# VER 2.6.0 (2013-09-12)
 #     - Add mydumper support
 # VER 2.5.1-01 - (2010-07-06)
 #     - Fixed pathname bug item #3025849 (by Johannes Kolter)
