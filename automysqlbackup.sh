@@ -441,9 +441,9 @@ fi
 # Database dump function
 dbdump () {
     if [ "$MYDUMPER_USE" = 'yes' ]; then
-        ${MYDUMPER} --user=${USERNAME} --password=${PASSWORD} --host=${DBHOST} ${MYDUMPER_OPT} --database ${1} --outputdir ${2}
+        ${MYDUMPER} --user=${USERNAME} --password="${PASSWORD}" --host=${DBHOST} ${MYDUMPER_OPT} --database ${1} --outputdir ${2}
     else
-        ${MYSQLDUMP} --user=${USERNAME} --password=${PASSWORD} --host=${DBHOST} ${OPT} ${1} > ${2}
+        ${MYSQLDUMP} --user=${USERNAME} --password="${PASSWORD}" --host=${DBHOST} ${OPT} ${1} > ${2}
     fi
 return $?
 }
@@ -506,7 +506,7 @@ fi
 
 # If backing up all DBs on the server
 if [ "${DBNAMES}" = "all" ]; then
-        DBNAMES="`${MYSQL} --user=${USERNAME} --password=${PASSWORD} --host=${DBHOST} --batch --skip-column-names -e "show databases"| ${SED} 's/ /%/g'`"
+        DBNAMES="`${MYSQL} --user=${USERNAME} --password="${PASSWORD}" --host=${DBHOST} --batch --skip-column-names -e "show databases"| ${SED} 's/ /%/g'`"
 
 	# If DBs are excluded
 	for exclude in ${DBEXCLUDE}
