@@ -110,6 +110,11 @@ else
 
 	MYDUMPER_THREADS=4
 
+	# Set umask
+	# Uncomment to activate! This will give folders rwx------
+	# and files rw------- permissions.                       
+	USE_UMASK=0077                                              
+
 	# Command to run before backups (uncomment to use)
 	#PREBACKUP="/etc/mysql-backup-pre"
 	
@@ -301,6 +306,7 @@ CP="`${WHICH} cp`"
 HOSTNAMEC="`${WHICH} hostname`"
 SED="`${WHICH} sed`"
 GREP="`${WHICH} grep`"
+UMASK="umask"
 
 function get_debian_pw() {
 	if [ -r /etc/mysql/debian.cnf ]; then
@@ -353,6 +359,7 @@ LOGERR=${BACKUPDIR}/ERRORS_${DBHOST}-`${DATEC} +%N`.log		# Logfile Name
 BACKUPFILES=""
 OPT="--quote-names --opt"			# OPT string for use with mysqldump ( see man mysqldump )
 MYDUMPER_OPT=''
+
 
 # IO redirection for logging.
 touch ${LOGFILE}
@@ -506,7 +513,9 @@ ${ECHO} http://sourceforge.net/projects/automysqlbackup/
 ${ECHO} 
 ${ECHO} Backup of Database Server - ${HOST}
 ${ECHO} ======================================================================
-
+${ECHO}
+${ECHO} Set umask to ${SET_UMASK}
+${UMASK} ${SET_UMASK}
 # Test is seperate DB backups are required
 if [ "${SEPDIR}" = "yes" ]; then
 ${ECHO} Backup Start Time `${DATEC}`
