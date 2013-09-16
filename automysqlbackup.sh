@@ -455,7 +455,7 @@ else
 	${ECHO} "No compression option set, check advanced settings"
 fi
 if [ "${LATEST}" = "yes" ]; then
-	${CP} ${1}${SUFFIX} "${BACKUPDIR}/latest/"
+	${CP} -av ${1}${SUFFIX} "${BACKUPDIR}/latest/"
 fi	
 return 0
 }
