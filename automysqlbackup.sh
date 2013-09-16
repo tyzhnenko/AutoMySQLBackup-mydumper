@@ -114,6 +114,16 @@ else
 	# Uncomment to activate! This will give folders rwx------
 	# and files rw------- permissions.                       
 	USE_UMASK=0077                                              
+  	
+    # Set rotation of daily backups. VALUE*24hours
+    # If you want to keep only today's backups, you could choose 1, i.e. everything older than 24hours will be removed.
+    ROTATION_DAILY=6
+
+    # Set rotation for weekly backups. VALUE*24hours
+    ROTATION_WEEKLY=35
+
+    # Set rotation for monthly backups. VALUE*24hours
+    ROTATION_MONTHLY=150
 
 	# Command to run before backups (uncomment to use)
 	#PREBACKUP="/etc/mysql-backup-pre"
@@ -544,7 +554,7 @@ ${ECHO} ======================================================================
                 fi
 				[ $? -eq 0 ] && {
 					${ECHO} "Rotating 5 month backups for ${MDB}"
-					${FIND} "${BACKUPDIR}/monthly/${MDB}" -mtime +150 -type f -exec ${RM} -v {} \; 
+					${FIND} "${BACKUPDIR}/monthly/${MDB}" -mtime +${ROTATION_MONTHLY} -type f -exec ${RM} -v {} \; 
 				}
                 if [ "$MYDUMPER_USE" = 'yes' ]; then
 				    BACKUPFILES="${BACKUPFILES} ${BACKUPDIR}/monthly/${MDB}/${MDB}_${DATE}.${M}.${MDB}"
@@ -587,7 +597,7 @@ ${ECHO} ======================================================================
             fi
 			[ $? -eq 0 ] && {
 				${ECHO} Rotating 5 weeks Backups...
-				${FIND} "${BACKUPDIR}/weekly/${DB}" -mtime +35 -type f -exec ${RM} -v {} \; 
+				${FIND} "${BACKUPDIR}/weekly/${DB}" -mtime +${ROTATION_WEEKLY} -type f -exec ${RM} -v {} \; 
 			}
             if [ "$MYDUMPER_USE" = 'yes' ]; then
 			    BACKUPFILES="${BACKUPFILES} ${BACKUPDIR}/weekly/${DB}/${DB}_week.${W}.${DATE}"
@@ -612,7 +622,7 @@ ${ECHO} ======================================================================
             fi
 			[ $? -eq 0 ] && {
 				${ECHO} Rotating last weeks Backup...
-				${FIND} "${BACKUPDIR}/daily/${DB}" -mtime +6 -type f -exec ${RM} -v {} \; 
+				${FIND} "${BACKUPDIR}/daily/${DB}" -mtime +${ROTATION_DAILY} -type f -exec ${RM} -v {} \; 
 			}
             if [ "$MYDUMPER_USE" = 'yes' ]; then
 			    BACKUPFILES="${BACKUPFILES} ${BACKUPDIR}/daily/${DB}/${DB}_${DATE}.${DOW}"
