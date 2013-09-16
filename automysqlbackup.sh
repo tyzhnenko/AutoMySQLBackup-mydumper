@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # MySQL MyDumper Backup Script
 # VER. 2.5.1 - http://sourceforge.net/projects/automysqlbackup/
