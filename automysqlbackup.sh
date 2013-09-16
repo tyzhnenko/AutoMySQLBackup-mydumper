@@ -686,7 +686,7 @@ ${ECHO} ======================================================================
 fi
 ${ECHO} Total disk space used for backup storage..
 ${ECHO} Size - Location
-${ECHO} `${DU} -hs "${BACKUPDIR}"`
+${ECHO} `${DU} -hsD "${BACKUPDIR}"`
 ${ECHO}
 ${ECHO} ======================================================================
 ${ECHO} If you find AutoMySQLBackup valuable please make a donation at
