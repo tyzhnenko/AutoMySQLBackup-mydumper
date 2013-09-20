@@ -454,11 +454,11 @@ compression () {
 if [ "${COMP}" = "gzip" ]; then
 	${GZIP} -f "${1}"
 	${ECHO}
-	${ECHO} Backup Information for "${1}"
+	${ECHO} "Backup Information for \"${1}\""
 	${GZIP} -l "${1}.gz"
 	SUFFIX=".gz"
 elif [ "${COMP}" = "bzip2" ]; then
-	${ECHO} Compression information for "${1}.bz2"
+	${ECHO} "Compression information for \"${1}.bz2\""
 	${BZIP2} -f -v ${1} 2>&1
 	SUFFIX=".bz2"
 else
@@ -474,12 +474,12 @@ return 0
 # Run command before we begin
 if [ "${PREBACKUP}" ]
 	then
-	${ECHO} ======================================================================
+	${ECHO} "======================================================================"
 	${ECHO} "Prebackup command output."
 	${ECHO}
 	eval ${PREBACKUP}
 	${ECHO}
-	${ECHO} ======================================================================
+	${ECHO} "======================================================================"
 	${ECHO}
 fi
 
@@ -517,19 +517,19 @@ if [ "${DBNAMES}" = "all" ]; then
         MDBNAMES=${DBNAMES}
 fi
 	
-${ECHO} ======================================================================
-${ECHO} AutoMySQLBackup VER ${VER}
-${ECHO} http://sourceforge.net/projects/automysqlbackup/
+${ECHO} "======================================================================"
+${ECHO} "AutoMySQLBackup VER ${VER}"
+${ECHO} "http://sourceforge.net/projects/automysqlbackup/"
 ${ECHO} 
-${ECHO} Backup of Database Server - ${HOST}
-${ECHO} ======================================================================
+${ECHO} "Backup of Database Server - ${HOST}"
+${ECHO} "======================================================================"
 ${ECHO}
-${ECHO} Set umask to ${SET_UMASK}
+${ECHO} "Set umask to ${SET_UMASK}"
 ${UMASK} ${SET_UMASK}
 # Test is seperate DB backups are required
 if [ "${SEPDIR}" = "yes" ]; then
-${ECHO} Backup Start Time `${DATEC}`
-${ECHO} ======================================================================
+${ECHO} "Backup Start Time `${DATEC}`"
+${ECHO} "======================================================================"
 	# Monthly Full Backup of all Databases
 	if [ ${DOM} = "01" ]; then
 		for MDB in ${MDBNAMES}
@@ -542,7 +542,7 @@ ${ECHO} ======================================================================
 			then
 				mkdir -p "${BACKUPDIR}/monthly/${MDB}"
 			fi
-			${ECHO} Monthly Backup of ${MDB}...
+			${ECHO} "Monthly Backup of ${MDB}..."
                 if [ "$MYDUMPER_USE" = 'yes' ]; then
                     if [ ! -e "${BACKUPDIR}/monthly/${MDB}/${MDB}_${DATE}.${M}.${MDB}" ]       # Check Database backup directory exists.
                     then
@@ -562,7 +562,7 @@ ${ECHO} ======================================================================
                     compression "${BACKUPDIR}/monthly/${MDB}/${MDB}_${DATE}.${M}.${MDB}.sql"
                     BACKUPFILES="${BACKUPFILES} ${BACKUPDIR}/monthly/${MDB}/${MDB}_${DATE}.${M}.${MDB}.sql${SUFFIX}"
                 fi
-			${ECHO} ----------------------------------------------------------------------
+			${ECHO} "----------------------------------------------------------------------"
 		done
 	fi
 
@@ -584,7 +584,7 @@ ${ECHO} ======================================================================
 	
 	# Weekly Backup
 	if [ ${DNOW} = ${DOWEEKLY} ]; then
-		${ECHO} Weekly Backup of Database \( ${DB} \)
+		${ECHO} "Weekly Backup of Database ( ${DB} )"
 		${ECHO}
             if [ "$MYDUMPER_USE" = 'yes' ]; then
                 if [ ! -e "${BACKUPDIR}/weekly/${DB}/${DB}_week.${W}.${DATE}" ]       # Check Database backup directory exists.
@@ -596,7 +596,7 @@ ${ECHO} ======================================================================
                 dbdump "${DB}" "${BACKUPDIR}/weekly/${DB}/${DB}_week.${W}.${DATE}.sql"
             fi
 			[ $? -eq 0 ] && {
-				${ECHO} Rotating 5 weeks Backups...
+				${ECHO} "Rotating 5 weeks Backups..."
 				${FIND} "${BACKUPDIR}/weekly/${DB}" -mtime +${ROTATION_WEEKLY} -type f -exec ${RM} -v {} \; 
 			}
             if [ "$MYDUMPER_USE" = 'yes' ]; then
@@ -605,11 +605,11 @@ ${ECHO} ======================================================================
                 compression "${BACKUPDIR}/weekly/${DB}/${DB}_week.${W}.${DATE}.sql"
                 BACKUPFILES="${BACKUPFILES} ${BACKUPDIR}/weekly/${DB}/${DB}_week.${W}.${DATE}.sql${SUFFIX}"
             fi
-		${ECHO} ----------------------------------------------------------------------
+		${ECHO} "----------------------------------------------------------------------"
 	
 	# Daily Backup
 	else
-		${ECHO} Daily Backup of Database \( ${DB} \)
+		${ECHO} "Daily Backup of Database ( ${DB} )"
 		${ECHO}
             if [ "$MYDUMPER_USE" = 'yes' ]; then
                 if [ ! -e "${BACKUPDIR}/daily/${DB}/${DB}_${DATE}.${DOW}" ]       # Check Database backup directory exists.
@@ -621,7 +621,7 @@ ${ECHO} ======================================================================
                 dbdump "${DB}" "${BACKUPDIR}/daily/${DB}/${DB}_${DATE}.${DOW}.sql"
             fi
 			[ $? -eq 0 ] && {
-				${ECHO} Rotating last weeks Backup...
+				${ECHO} "Rotating last weeks Backup..."
 				${FIND} "${BACKUPDIR}/daily/${DB}" -mtime +${ROTATION_DAILY} -type f -exec ${RM} -v {} \; 
 			}
             if [ "$MYDUMPER_USE" = 'yes' ]; then
@@ -630,19 +630,19 @@ ${ECHO} ======================================================================
                 compression "${BACKUPDIR}/daily/${DB}/${DB}_${DATE}.${DOW}.sql"
                 BACKUPFILES="${BACKUPFILES} ${BACKUPDIR}/daily/${DB}/${DB}_${DATE}.${DOW}.sql${SUFFIX}"
             fi
-		${ECHO} ----------------------------------------------------------------------
+		${ECHO} "----------------------------------------------------------------------"
 	fi
 	done
-${ECHO} Backup End `${DATEC}`
-${ECHO} ======================================================================
+${ECHO} "Backup End `${DATEC}`"
+${ECHO} "======================================================================"
 
 
 else # One backup file for all DBs
-${ECHO} Backup Start `${DATEC}`
-${ECHO} ======================================================================
+${ECHO} "Backup Start `${DATEC}`"
+${ECHO} "======================================================================"
 	# Monthly Full Backup of all Databases
 	if [ ${DOM} = "01" ]; then
-		${ECHO} Monthly full Backup of \( ${MDBNAMES} \)...
+		${ECHO} "Monthly full Backup of ( ${MDBNAMES} )..."
 			dbdump "${MDBNAMES}" "${BACKUPDIR}/monthly/${DATE}.${M}.all-databases.sql"
 			[ $? -eq 0 ] && {
 				${ECHO} "Rotating 5 month backups."
@@ -650,12 +650,12 @@ ${ECHO} ======================================================================
 			}
 			compression "${BACKUPDIR}/monthly/${DATE}.${M}.all-databases.sql"
 			BACKUPFILES="${BACKUPFILES} ${BACKUPDIR}/monthly/${DATE}.${M}.all-databases.sql${SUFFIX}"
-		${ECHO} ----------------------------------------------------------------------
+		${ECHO} "----------------------------------------------------------------------"
 	fi
 
 	# Weekly Backup
 	if [ ${DNOW} = ${DOWEEKLY} ]; then
-		${ECHO} Weekly Backup of Databases \( ${DBNAMES} \)
+		${ECHO} "Weekly Backup of Databases ( ${DBNAMES} )"
 		${ECHO}
 		${ECHO}
 			dbdump "${DBNAMES}" "${BACKUPDIR}/weekly/week.${W}.${DATE}.sql"
@@ -665,11 +665,11 @@ ${ECHO} ======================================================================
 			}
 			compression "${BACKUPDIR}/weekly/week.${W}.${DATE}.sql"
 			BACKUPFILES="${BACKUPFILES} ${BACKUPDIR}/weekly/week.${W}.${DATE}.sql${SUFFIX}"
-		${ECHO} ----------------------------------------------------------------------
+		${ECHO} "----------------------------------------------------------------------"
 		
 	# Daily Backup
 	else
-		${ECHO} Daily Backup of Databases \( ${DBNAMES} \)
+		${ECHO} "Daily Backup of Databases ( ${DBNAMES} )"
 		${ECHO}
 		${ECHO}
 			dbdump "${DBNAMES}" "${BACKUPDIR}/daily/${DATE}.${DOW}.sql"
@@ -679,29 +679,29 @@ ${ECHO} ======================================================================
 			}
 			compression "${BACKUPDIR}/daily/${DATE}.${DOW}.sql"
 			BACKUPFILES="${BACKUPFILES} ${BACKUPDIR}/daily/${DATE}.${DOW}.sql${SUFFIX}"
-		${ECHO} ----------------------------------------------------------------------
+		${ECHO} "----------------------------------------------------------------------"
 	fi
-${ECHO} Backup End Time `${DATEC}`
-${ECHO} ======================================================================
+${ECHO} "Backup End Time `${DATEC}`"
+${ECHO} "======================================================================"
 fi
-${ECHO} Total disk space used for backup storage..
-${ECHO} Size - Location
-${ECHO} `${DU} -hsD "${BACKUPDIR}"`
+${ECHO} "Total disk space used for backup storage..."
+${ECHO} "Size - Location"
+${ECHO} "`${DU} -hsD "${BACKUPDIR}"`"
 ${ECHO}
-${ECHO} ======================================================================
-${ECHO} If you find AutoMySQLBackup valuable please make a donation at
-${ECHO} http://sourceforge.net/project/project_donations.php?group_id=101066
-${ECHO} ======================================================================
+${ECHO} "======================================================================"
+${ECHO} "If you find AutoMySQLBackup valuable please make a donation at"
+${ECHO} "http://sourceforge.net/project/project_donations.php?group_id=101066"
+${ECHO} "======================================================================"
 
 # Run command when we're done
 if [ "${POSTBACKUP}" ]
 	then
-	${ECHO} ======================================================================
+	${ECHO} "======================================================================"
 	${ECHO} "Postbackup command output."
 	${ECHO}
 	eval ${POSTBACKUP}
 	${ECHO}
-	${ECHO} ======================================================================
+	${ECHO} "======================================================================"
 fi
 
 #Clean up IO redirection
