@@ -113,7 +113,7 @@ else
 	# Set umask
 	# Uncomment to activate! This will give folders rwx------
 	# and files rw------- permissions.                       
-	USE_UMASK=0077                                              
+	SET_UMASK=0077                                              
   	
     # Set rotation of daily backups. VALUE*24hours
     # If you want to keep only today's backups, you could choose 1, i.e. everything older than 24hours will be removed.
